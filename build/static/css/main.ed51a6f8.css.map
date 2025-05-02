@@ -1,0 +1,1 @@
+{"version":3,"file":"static/css/main.ed51a6f8.css","mappings":"AAAA,cAAc,CACd,oBAAoB,CACpB,mBAAmB,CAGnB,KAEE,gCAAkC,CADlC,QAEF","sources":["index.css"],"sourcesContent":["@tailwind base;\n@tailwind components;\n@tailwind utilities;\n\n/* Opcional: estilos globales */\nbody {\n  margin: 0;\n  font-family: system-ui, sans-serif;\n}\n"],"names":[],"sourceRoot":""}
