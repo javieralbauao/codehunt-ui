@@ -18,11 +18,14 @@ function Register() {
     }
 
     try {
-      const response = await axios.post("http://localhost:5297/api/Auth/register", {
-        name,
-        email,
-        password,
-      });
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/Auth/register`,
+        {
+          name,
+          email,
+          password,
+        }
+      );
 
       if (response.status === 200) {
         setMensaje("✅ Registro exitoso. Serás redirigido al login...");

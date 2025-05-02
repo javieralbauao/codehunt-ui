@@ -17,10 +17,13 @@ function Login() {
     }
 
     try {
-      const response = await axios.post("http://localhost:5297/api/Auth/login", {
-        email,
-        password,
-      });
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/Auth/login`,
+        {
+          email,
+          password,
+        }
+      );
 
       const token = response.data.token;
       localStorage.setItem("token", token);
