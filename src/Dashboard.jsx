@@ -6,7 +6,7 @@ function Dashboard() {
   const { user } = useUser();
 
   if (!user) return <div>Por favor inicia sesión</div>;
-
+  // dashboard
   return (
     <div style={{ padding: "20px" }}>
       <h1>Bienvenido, {user.name}</h1>
