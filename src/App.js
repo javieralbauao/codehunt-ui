@@ -5,6 +5,7 @@ import Login from "./Login";
 import Register from "./Register";
 import Exercises from "./Exercises";
 import Dashboard from "./Dashboard";
+import AdminPage from "./pages/AdminPage";
 import PrivateRoute from "./PrivateRoute";
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
           }
         />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/admin/*" element={<AdminPage />} />
       </Routes>
     </BrowserRouter>
   );
