@@ -1,125 +1,175 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import * as exercisesApi from "../src/services/exercisesApi";
+import { useUser } from "../src/context/userContext";
 
-const Emoji = ({ symbol, label }) => (
-  <span role="img" aria-label={label}>
-    {symbol}
-  </span>
-);
+function ExercisePage() {
+  const { user, logout } = useUser();
+  const [exercisesList, setExercisesList] = useState([]);
+  const [selectedExercise, setSelectedExercise] = useState(null);
+  const [language, setLanguage] = useState("python");
+  const [userCode, setUserCode] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [result, setResult] = useState("");
+  const [userOutput, setUserOutput] = useState("");
+  const [expectedOutput, setExpectedOutput] = useState("");
+  const [saving, setSaving] = useState(false);
 
-function Exercises() {
-  const [userCode1, setUserCode1] = useState(`def suma(a, b):\n    return a + b`);
-  const [userCode2, setUserCode2] = useState(`def es_par(n):\n    return n % 2 == 0`);
-  const [result1, setResult1] = useState("");
-  const [result2, setResult2] = useState("");
-
-  const handleCodeChange1 = (event) => {
-    setUserCode1(event.target.value);
+  const languageIds = {
+    csharp: "6647BE14-8071-4AD2-852F-4C5B474706FC", 
+    javascript: "DB4D3CDB-2D84-4409-A7AE-3B64A2EDC0F2",
+    python: "74157F44-FEF8-49F8-B897-37E25467E086",
+    cpp: "2027C479-25F5-4F44-8B1F-FB63990A2D53"    
   };
 
-  const handleCodeChange2 = (event) => {
-    setUserCode2(event.target.value);
+  const getLanguageId = (lang) => languageIds[lang];
+
+  useEffect(() => {
+    const fetchExercises = async () => {
+      try {
+        const response = await exercisesApi.getAllExercises();
+        setExercisesList(response.data);
+        if (response.data.length > 0) {
+          setSelectedExercise(response.data[0]);
+          const templateResp = await exercisesApi.getTemplate(response.data[0].id, getLanguageId(language));
+          setUserCode(templateResp.data.template);
+        }
+      } catch (error) {
+        console.error("Error al cargar ejercicios:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user) {
+      fetchExercises();
+    }
+  }, [user]);
+
+  const handleExerciseChange = async (exercise) => {
+    setSelectedExercise(exercise);
+    try {
+      const templateResp = await exercisesApi.getTemplate(exercise.id, getLanguageId(language));
+      setUserCode(templateResp.data.template);
+    } catch {
+      setUserCode("// No se pudo cargar la plantilla.");
+    }
+    setResult("");
+    setUserOutput("");
+    setExpectedOutput("");
   };
 
-  const runCode = (code, exerciseNumber) => {
-    // Simulación de ejecución de código
-    console.log(`Ejecutando código para el Ejercicio ${exerciseNumber}:`, code);
-    const simulatedResult = (
-      <>
-        ¡Resultado simulado para el Ejercicio {exerciseNumber}!{" "}
-        <Emoji symbol="🎉" label="fiesta" />
-      </>
-    );
-    if (exerciseNumber === 1) {
-      setResult1(simulatedResult);
-    } else if (exerciseNumber === 2) {
-      setResult2(simulatedResult);
+  const handleLanguageChange = async (e) => {
+    const newLang = e.target.value;
+    setLanguage(newLang);
+    if (selectedExercise) {
+      try {
+        const templateResp = await exercisesApi.getTemplate(selectedExercise.id, getLanguageId(newLang));
+        setUserCode(templateResp.data.template);
+      } catch {
+        setUserCode("// No se pudo cargar la plantilla.");
+      }
     }
   };
 
+  const handleRun = async () => {
+    setSaving(true);
+    setResult("");
+    setUserOutput("");
+    setExpectedOutput("");
+    try {
+      const response = await exercisesApi.runCode({
+        exerciseId: selectedExercise.id,
+        language,
+        code: userCode
+      });
+      setUserOutput(response.data.userOutput);
+      setExpectedOutput(response.data.expectedOutput);
+      setResult(response.data.correct
+        ? "✅ ¡Correcto! Todos los casos de prueba pasaron."
+        : `❌ Incorrecto. ${response.data.error || "La salida no coincide con la esperada."}`);
+    } catch (error) {
+      setResult("Error al ejecutar el código: " + (error.response?.data?.message || error.message));
+      if (error.response?.status === 401) logout();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    setSaving(true);
+    try {
+      await exercisesApi.submitSolution({
+        exerciseId: selectedExercise.id,
+        language,
+        code: userCode
+      });
+      setResult("¡Código guardado exitosamente! 🎉");
+    } catch (error) {
+      setResult("Error al guardar el código: " + (error.response?.data?.message || error.message));
+      if (error.response?.status === 401) logout();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return <div>Cargando...</div>;
+  if (!user) return <div>Por favor inicia sesión para continuar</div>;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-300 to-pink-300 py-16">
-      <div className="container mx-auto px-6 sm:px-8 lg:px-12">
-        <h1 className="text-5xl font-extrabold text-center text-indigo-800 mb-16 animate-pulse drop-shadow-lg">
-          <Emoji symbol="✨" label="brillo" /> ¡A Programar se Ha Dicho!{" "}
-          <Emoji symbol="✨" label="brillo" />
-        </h1>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-5xl mx-auto">
-          {/* Ejercicio 1 */}
-          <div className="bg-white shadow-xl rounded-2xl overflow-hidden hover:shadow-2xl transition duration-300">
-            <div className="p-10">
-              <h2 className="text-2xl font-bold text-purple-700 mb-6 flex items-center justify-center sm:justify-start">
-                <span className="mr-4 text-purple-500 text-xl font-semibold">1.</span> Suma de dos números
-              </h2>
-              <p className="text-lg text-gray-800 mb-6 text-center sm:text-left">
-                ¡Comencemos con algo sencillo! Escribe tu código Python aquí para sumar esos dos numeritos.{" "}
-                <Emoji symbol="👇" label="abajo" />
-              </p>
-              <textarea
-                className="w-full h-40 p-4 bg-indigo-50 rounded-md text-sm text-gray-800 font-mono focus:outline-none focus:ring-2 focus:ring-purple-400"
-                value={userCode1}
-                onChange={handleCodeChange1}
-              />
-              <div className="flex justify-center sm:justify-start mt-6">
-                <button
-                  className="bg-purple-600 hover:bg-purple-800 text-white font-bold py-3 px-6 rounded-full focus:outline-none focus:ring-4 focus:ring-purple-300 active:bg-purple-900 transition duration-200"
-                  onClick={() => runCode(userCode1, 1)}
-                >
-                  ¡A Sumar! <Emoji symbol="➕" label="suma" />
-                </button>
-                {result1 && (
-                  <div className="ml-4 text-green-600 font-semibold text-lg flex items-center">
-                    <Emoji symbol="✅" label="verificado" /> {result1}
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="bg-purple-100 py-4 px-10 text-sm text-purple-700 text-center sm:text-left">
-              <Emoji symbol="💡" label="consejo" />{" "}
-              <span className="font-bold">Consejo rápido:</span> El operador `+` es tu mejor amigo aquí.
-            </div>
-          </div>
-
-          {/* Ejercicio 2 */}
-          <div className="bg-white shadow-xl rounded-2xl overflow-hidden hover:shadow-2xl transition duration-300">
-            <div className="p-10">
-              <h2 className="text-2xl font-bold text-pink-700 mb-6 flex items-center justify-center sm:justify-start">
-                <span className="mr-4 text-pink-500 text-xl font-semibold">2.</span> ¿Es un número par?{" "}
-                <Emoji symbol="🤔" label="pensando" />
-              </h2>
-              <p className="text-lg text-gray-800 mb-6 text-center sm:text-left">
-                ¡Un pequeño desafío más! Determina si el número que te den es par o impar con tu magia Python.{" "}
-                <Emoji symbol="✨" label="brillo" />
-              </p>
-              <textarea
-                className="w-full h-40 p-4 bg-pink-50 rounded-md text-sm text-gray-800 font-mono focus:outline-none focus:ring-2 focus:ring-pink-400"
-                value={userCode2}
-                onChange={handleCodeChange2}
-              />
-              <div className="flex justify-center sm:justify-start mt-6">
-                <button
-                  className="bg-pink-600 hover:bg-pink-800 text-white font-bold py-3 px-6 rounded-full focus:outline-none focus:ring-4 focus:ring-pink-300 active:bg-pink-900 transition duration-200"
-                  onClick={() => runCode(userCode2, 2)}
-                >
-                  ¡A Comprobar! <Emoji symbol="🔍" label="lupa" />
-                </button>
-                {result2 && (
-                  <div className="ml-4 text-green-600 font-semibold text-lg flex items-center">
-                    <Emoji symbol="✅" label="verificado" /> {result2}
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="bg-pink-100 py-4 px-10 text-sm text-pink-700 text-center sm:text-left">
-              <Emoji symbol="💡" label="consejo" />{" "}
-              <span className="font-bold">Recuerda:</span> El operador `%` te dirá el resto de una división.{" "}
-              <Emoji symbol="😉" label="guiño" />
-            </div>
-          </div>
-        </div>
+    <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', padding: '10px', backgroundColor: '#f8f9fa', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+        <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#333' }}>Hola, {user.name}</div>
+        <button onClick={logout} style={{ padding: '8px 16px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Cerrar Sesión</button>
       </div>
+
+      <h1 style={{ fontSize: '24px', marginBottom: '20px' }}>Ejercicios de Programación</h1>
+
+      <div style={{ display: 'grid', gap: '20px', marginBottom: '20px' }}>
+        {exercisesList.map(exercise => (
+          <div key={exercise.id} style={{ padding: '15px', border: '1px solid #ccc', borderRadius: '8px', cursor: 'pointer', backgroundColor: selectedExercise?.id === exercise.id ? '#f0f0ff' : 'white' }} onClick={() => handleExerciseChange(exercise)}>
+            <h2 style={{ fontSize: '18px', marginBottom: '10px' }}>{exercise.title}</h2>
+            <p style={{ color: '#666' }}>{exercise.description}</p>
+          </div>
+        ))}
+      </div>
+
+      {selectedExercise && (
+        <>
+          <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #dee2e6' }}>
+            <h3 style={{ marginBottom: '10px' }}>Ejemplo:</h3>
+            <pre style={{ fontFamily: 'monospace' }}>{selectedExercise.InitialTestData}</pre>
+          </div>
+
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ display: 'block', marginBottom: '8px' }}>Lenguaje:</label>
+            <select value={language} onChange={handleLanguageChange} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}>
+              <option value="csharp">C#</option>
+              <option value="javascript">C++</option>
+              <option value="python">python</option>
+            </select>
+          </div>
+
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ display: 'block', marginBottom: '8px' }}>Tu código:</label>
+            <textarea value={userCode} onChange={(e) => setUserCode(e.target.value)} style={{ width: '100%', height: '300px', padding: '15px', fontFamily: 'monospace', fontSize: '14px', border: '1px solid #ccc', borderRadius: '4px' }} spellCheck="false" />
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+            <button onClick={handleRun} disabled={saving} style={{ padding: '10px 20px', backgroundColor: saving ? '#999' : '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: saving ? 'not-allowed' : 'pointer' }}>{saving ? 'Ejecutando...' : 'Ejecutar código'}</button>
+            <button onClick={handleSubmit} disabled={saving} style={{ padding: '10px 20px', backgroundColor: saving ? '#999' : '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: saving ? 'not-allowed' : 'pointer' }}>{saving ? 'Guardando...' : 'Guardar solución'}</button>
+          </div>
+
+          {(result || userOutput || expectedOutput) && (
+            <div style={{ marginTop: '20px', padding: '15px', backgroundColor: result.includes('✅') ? '#e6ffe6' : '#fff6f6', borderRadius: '4px', border: '1px solid ' + (result.includes('✅') ? '#c3e6cb' : '#f5c6cb') }}>
+              <div style={{ marginBottom: '10px', fontWeight: 'bold' }}>{result}</div>
+              {userOutput && <div><strong>Tu salida:</strong><pre style={{ backgroundColor: '#f8f9fa', padding: '10px', borderRadius: '4px' }}>{userOutput}</pre></div>}
+              {expectedOutput && <div><strong>Salida esperada:</strong><pre style={{ backgroundColor: '#f8f9fa', padding: '10px', borderRadius: '4px' }}>{expectedOutput}</pre></div>}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
 
-export default Exercises;
+export default ExercisePage;

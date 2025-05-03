@@ -1,8 +1,12 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
+import { useUser } from "../src/context/userContext";
+import api from "../src/services/api";
 
 function Login() {
+  const { login } = useUser();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -17,19 +21,22 @@ function Login() {
     }
 
     try {
-      const response = await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/Auth/login`,
-        {
-          email,
-          password,
-        }
-      );
+      const response = await api.post("/Auth/login", { email, password });
 
       const token = response.data.token;
-      localStorage.setItem("token", token);
+      login(token);
+
+      const decoded = jwtDecode(token);
+      const userRole = decoded.role || decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
 
       setMensaje("✅ Inicio de sesión exitoso");
-      navigate("/ejercicios");
+
+      if (userRole === "Student") {
+        navigate("/ejercicios");
+      } else {
+        navigate("/dashboard");
+      }
+
     } catch (error) {
       setMensaje("❌ Credenciales inválidas o error de conexión");
     }
@@ -61,7 +68,7 @@ function Login() {
           width: "200px",
           backgroundColor: "blue",
           padding: "30px",
-          borderRadius:"10px",
+          borderRadius: "10px",
           opacity: "0.3",
           color: "gray",
           fontSize: "20px"

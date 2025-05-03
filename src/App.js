@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./Login";
 import Register from "./Register";
 import Exercises from "./Exercises";
+import PrivateRoute from "./PrivateRoute";
 
 function App() {
   return (
@@ -11,7 +12,14 @@ function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/ejercicios" element={<Exercises />} />
+        <Route
+          path="/ejercicios"
+          element={
+            <PrivateRoute>
+              <Exercises />
+            </PrivateRoute>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );
