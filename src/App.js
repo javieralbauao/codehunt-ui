@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./Login";
 import Register from "./Register";
 import Exercises from "./Exercises";
+import Dashboard from "./Dashboard";
 import PrivateRoute from "./PrivateRoute";
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
             </PrivateRoute>
           }
         />
+        <Route path="/dashboard" element={<Dashboard />} />
       </Routes>
     </BrowserRouter>
   );
