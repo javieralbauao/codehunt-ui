@@ -2,6 +2,15 @@ import React, { useState, useEffect } from "react";
 import * as exercisesApi from "../src/services/exercisesApi";
 import { useUser } from "../src/context/userContext";
 
+const languageIds = {
+  csharp: "6647BE14-8071-4AD2-852F-4C5B474706FC", 
+  javascript: "DB4D3CDB-2D84-4409-A7AE-3B64A2EDC0F2",
+  python: "74157F44-FEF8-49F8-B897-37E25467E086",
+  cpp: "2027C479-25F5-4F44-8B1F-FB63990A2D53"    
+};
+
+const getLanguageId = (lang) => languageIds[lang];
+
 function ExercisePage() {
   const { user, logout } = useUser();
   const [exercisesList, setExercisesList] = useState([]);
@@ -13,15 +22,6 @@ function ExercisePage() {
   const [userOutput, setUserOutput] = useState("");
   const [expectedOutput, setExpectedOutput] = useState("");
   const [saving, setSaving] = useState(false);
-
-  const languageIds = {
-    csharp: "6647BE14-8071-4AD2-852F-4C5B474706FC", 
-    javascript: "DB4D3CDB-2D84-4409-A7AE-3B64A2EDC0F2",
-    python: "74157F44-FEF8-49F8-B897-37E25467E086",
-    cpp: "2027C479-25F5-4F44-8B1F-FB63990A2D53"    
-  };
-
-  const getLanguageId = (lang) => languageIds[lang];
 
   useEffect(() => {
     const fetchExercises = async () => {
@@ -43,7 +43,7 @@ function ExercisePage() {
     if (user) {
       fetchExercises();
     }
-  }, [user]);
+  }, [user, language]);
 
   const handleExerciseChange = async (exercise) => {
     setSelectedExercise(exercise);
