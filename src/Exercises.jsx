@@ -22,6 +22,18 @@ function ExercisePage() {
   const [userOutput, setUserOutput] = useState("");
   const [expectedOutput, setExpectedOutput] = useState("");
   const [saving, setSaving] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [completedCount, setCompletedCount] = useState(0);
+  
+  useEffect(() => {
+    if (userOutput && expectedOutput) {
+      const isCorrect = userOutput.trim() === expectedOutput.trim();
+      if (isCorrect) {
+        setCompletedCount((prev) => prev + 1);
+      }
+      setProgress(((completedCount + (isCorrect ? 1 : 0)) / exercisesList.length) * 100);
+    }
+  }, [userOutput, expectedOutput, completedCount, exercisesList.length]);
 
   useEffect(() => {
     const fetchExercises = async () => {
@@ -132,7 +144,14 @@ function ExercisePage() {
           </div>
         ))}
       </div>
-
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: "20px", marginBottom: "10px" }}>
+  <div style={{ padding: "8px 16px", backgroundColor: "#fff", borderRadius: "8px", boxShadow: "0 2px 6px rgba(0,0,0,0.1)" }}>
+    <strong>✅ Completados:</strong> {completedCount}/{exercisesList.length}
+  </div>
+  <div style={{ padding: "8px 16px", backgroundColor: "#fff", borderRadius: "8px", boxShadow: "0 2px 6px rgba(0,0,0,0.1)" }}>
+    <strong>📊 Progreso:</strong> {Math.round(progress)}%
+  </div>
+</div>
       {selectedExercise && (
         <>
           <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #dee2e6' }}>
