@@ -33,7 +33,7 @@ function ExercisePage() {
       }
       setProgress(((completedCount + (isCorrect ? 1 : 0)) / exercisesList.length) * 100);
     }
-  }, [userOutput, expectedOutput]);
+  }, [userOutput, expectedOutput, completedCount, exercisesList.length]);
 
   useEffect(() => {
     const fetchExercises = async () => {
